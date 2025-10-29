@@ -8,7 +8,7 @@
 [![Last Commit](https://img.shields.io/github/last-commit/An0nX/flatten-rust/main.svg)](https://github.com/An0nX/flatten-rust/commits/main)
 [![Issues](https://img.shields.io/github/issues/An0nX/flatten-rust.svg)](https://github.com/An0nX/flatten-rust/issues)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](http://makeapullrequest.com)
-[![Downloads](https://img.shields.io/crates/d/flatten-rust.svg)](https://crates.io/crates/flatten-rust)
+[![Downloads](https://img.shields.io/github/downloads/An0nX/flatten-rust/total.svg)](https://github.com/An0nX/flatten-rust/releases)
 
 Высокопроизводительный инструмент для флаттенинга кодовой базы, написанный на Rust. Обеспечивает значительное ускорение обработки по сравнению с Python-версией, лучшую работу с памятью и параллельную обработку файлов.
 
@@ -49,11 +49,10 @@ cargo build --release
 
 Скачайте готовый бинарный файл из [Releases](https://github.com/An0nX/flatten-rust/releases):
 
-- **Linux x86_64**: `flatten-rust-linux-x86_64.gz`
-- **Linux ARM64**: `flatten-rust-linux-aarch64.gz` 
-- **Windows x86_64**: `flatten-rust-windows-x86_64.exe.zip`
-- **macOS x86_64**: `flatten-rust-macos-x86_64.gz`
-- **macOS ARM64**: `flatten-rust-macos-aarch64.gz`
+- **Linux x86_64**: `flatten-rust-linux-x86_64`
+- **Windows x86_64**: `flatten-rust-windows-x86_64.exe`
+- **macOS x86_64**: `flatten-rust-macos-x86_64`
+- **macOS ARM64**: `flatten-rust-macos-aarch64`
 
 ## 🎯 Использование
 
