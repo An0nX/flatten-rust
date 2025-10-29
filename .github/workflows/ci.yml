@@ -22,7 +22,7 @@ jobs:
 
     steps:
     - name: Checkout code
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
 
     - name: Install Rust
       uses: dtolnay/rust-toolchain@master
@@ -70,7 +70,7 @@ jobs:
 
     steps:
     - name: Checkout code
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
 
     - name: Install Rust
       uses: dtolnay/rust-toolchain@stable
@@ -95,7 +95,7 @@ jobs:
       run: cargo bench
 
     - name: Upload binary artifact
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v5
       with:
         name: flatten-rust-${{ matrix.target }}
         path: target/${{ matrix.target }}/release/flatten-rust${{ matrix.os == 'windows-latest' && '.exe' || '' }}
@@ -106,7 +106,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: Checkout code
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
 
     - name: Security audit
       uses: actions-rs/audit-check@v1
