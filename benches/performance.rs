@@ -1,5 +1,5 @@
 use criterion::{criterion_group, criterion_main, Criterion};
-use std::{fs, hint, collections::HashSet};
+use std::{fs, hint};
 use std::path::Path;
 use flatten_rust::FlattenConfig;
 use tempfile::tempdir;
@@ -19,7 +19,7 @@ fn create_test_structure() -> tempfile::TempDir {
     temp_dir
 }
 
-fn collect_files(directory: &Path, config: &FlattenConfig) -> Vec<std::path::PathBuf> {
+fn collect_files(directory: &Path, _config: &FlattenConfig) -> Vec<std::path::PathBuf> {
     let mut files = Vec::new();
     let walkdir = walkdir::WalkDir::new(directory).follow_links(false);
     
@@ -87,7 +87,7 @@ fn bench_memory_mapping(c: &mut Criterion) {
                 if let Ok(file) = std::fs::File::open(file_path) {
                     if let Ok(map) = unsafe { memmap2::MmapOptions::new().map(&file) } {
                         let content = std::str::from_utf8(&map);
-                        hint::black_box(content);
+                        let _ = hint::black_box(content);
                     }
                 }
             }
@@ -97,9 +97,11 @@ fn bench_memory_mapping(c: &mut Criterion) {
 
 fn bench_skip_filtering(c: &mut Criterion) {
     let temp_dir = create_test_structure();
-    let mut config = FlattenConfig::default();
-    config.skip_folders = vec!["target".to_string(), "node_modules".to_string()].into_iter().collect();
-    config.skip_extensions = vec!["exe".to_string(), "dll".to_string()].into_iter().collect();
+    let _config = FlattenConfig {
+        skip_folders: vec!["target".to_string(), "node_modules".to_string()].into_iter().collect(),
+        skip_extensions: vec!["exe".to_string(), "dll".to_string()].into_iter().collect(),
+        ..Default::default()
+    };
     
     c.bench_function("skip_filtering", |b| {
         b.iter(|| {
