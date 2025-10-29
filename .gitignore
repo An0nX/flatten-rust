@@ -1,0 +1,88 @@
+# Ignore build artifacts
+/target/
+/target/debug/
+/target/release/
+
+# Ignore Cargo lock file (optional)
+# Cargo.lock
+
+# Ignore IDE files
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Ignore OS files
+.DS_Store
+Thumbs.db
+
+# Ignore log files
+*.log
+
+# Ignore temporary files
+*.tmp
+*.temp
+
+# Ignore backup files
+*.bak
+*.backup
+
+# Ignore compiled output
+*.exe
+*.dll
+*.so
+*.dylib
+
+# Ignore test output
+/tests/output/
+/examples/output/
+
+# Ignore benchmark results
+/benches/target/
+
+# Ignore Docker
+.dockerignore
+
+# Ignore local configuration
+.env
+.env.local
+.env.*.local
+
+# Ignore node modules (if any)
+node_modules/
+
+# Ignore Python cache (if any)
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Ignore release artifacts
+*.tar.gz
+*.zip
+*.deb
+*.rpm
+
+# Ignore profiling data
+perf.data*
+callgrind.out.*
+massif.out.*
+
+# Ignore coverage reports
+tarpaulin-report.html
+cobertura.xml
+lcov.info
+
+# Ignore rustfmt backup files
+**/*.rs.bk
+
+# Ignore clippy temporary files
+.clippy-temp/
+
+# Ignore documentation build
+/doc/book/
+/doc/target/
+
+# Ignore local scripts output
+scripts/output/

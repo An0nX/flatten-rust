@@ -1,0 +1,230 @@
+# Example configuration for flatten-rust
+# This file demonstrates various configuration options
+
+# Basic configuration
+[general]
+# Default output file
+output = "codebase.md"
+
+# Number of processing threads (0 = auto-detect)
+threads = 0
+
+# Maximum file size to process in bytes (0 = unlimited)
+max_file_size = 104857600  # 100MB
+
+# Show skipped folders in tree structure
+show_skipped = false
+
+# Folders to skip during processing
+[skip_folders]
+# Common development folders
+folders = [
+    "node_modules",
+    ".git",
+    "target",
+    "dist",
+    "build",
+    "vendor",
+    ".vscode",
+    ".idea",
+    "coverage",
+    ".nyc_output",
+    ".pytest_cache",
+    "__pycache__",
+    ".mypy_cache",
+    ".tox",
+    "venv",
+    ".venv",
+    "env",
+    ".env",
+    "node_modules",
+    ".next",
+    ".nuxt",
+    ".output",
+    ".angular",
+    "e2e",
+    ".e2e",
+]
+
+# File extensions to skip (binary files)
+[skip_extensions]
+extensions = [
+    "exe",
+    "dll",
+    "so",
+    "dylib",
+    "bin",
+    "img",
+    "iso",
+    "zip",
+    "tar",
+    "gz",
+    "7z",
+    "rar",
+    "bz2",
+    "xz",
+    "deb",
+    "rpm",
+    "dmg",
+    "pkg",
+    "msi",
+    "apk",
+    "ipa",
+    "jpg",
+    "jpeg",
+    "png",
+    "gif",
+    "bmp",
+    "tiff",
+    "webp",
+    "svg",
+    "ico",
+    "mp3",
+    "mp4",
+    "avi",
+    "mov",
+    "wmv",
+    "flv",
+    "webm",
+    "pdf",
+    "doc",
+    "docx",
+    "xls",
+    "xlsx",
+    "ppt",
+    "pptx",
+    "odt",
+    "ods",
+    "odp",
+]
+
+# Language-specific configurations
+[languages.rust]
+# Rust-specific folders to skip
+skip_folders = [
+    "target/debug",
+    "target/release",
+    "target/doc",
+    "Cargo.lock",
+]
+
+# Rust-specific file extensions to include (not skip)
+include_extensions = [
+    "rs",
+    "toml",
+]
+
+[languages.javascript]
+# JavaScript-specific folders to skip
+skip_folders = [
+    "node_modules",
+    ".next",
+    ".nuxt",
+    "dist",
+    "build",
+    ".webpack",
+    ".cache",
+]
+
+[languages.python]
+# Python-specific folders to skip
+skip_folders = [
+    "__pycache__",
+    ".pytest_cache",
+    ".mypy_cache",
+    ".tox",
+    "venv",
+    ".venv",
+    "env",
+    ".env",
+    ".coverage",
+    "htmlcov",
+]
+
+# Project-specific configurations
+[projects.web_app]
+folders = [
+    "src",
+    "public",
+    "tests",
+]
+skip_folders = [
+    "node_modules",
+    "dist",
+    ".next",
+]
+
+[projects.rust_library]
+folders = [
+    "src",
+    "tests",
+    "benches",
+    "examples",
+]
+skip_folders = [
+    "target",
+    "Cargo.lock",
+]
+
+# Performance tuning
+[performance]
+# Buffer size for file operations (in bytes)
+buffer_size = 8192
+
+# Maximum number of files to process in parallel
+max_parallel_files = 1000
+
+# Timeout for file operations (in seconds)
+file_timeout = 30
+
+# Memory mapping threshold (files larger than this will use memory mapping)
+mmap_threshold = 1048576  # 1MB
+
+# Output formatting
+[output]
+# Include file timestamps
+include_timestamps = false
+
+# Include file sizes
+include_sizes = false
+
+# Include file permissions
+include_permissions = false
+
+# Format for file size display
+size_format = "human"  # "human", "bytes", "kb", "mb"
+
+# Color output (when supported)
+color_output = true
+
+# Advanced options
+[advanced]
+# Follow symbolic links
+follow_symlinks = false
+
+# Maximum depth for directory traversal
+max_depth = 0  # 0 = unlimited
+
+# Include hidden files and folders
+include_hidden = false
+
+# Case-sensitive matching for skip patterns
+case_sensitive = false
+
+# Regular expression patterns for advanced file filtering
+[advanced.regex_patterns]
+# Files matching these patterns will be skipped
+skip_files = [
+    r".*\.log$",
+    r".*\.tmp$",
+    r".*\.swp$",
+    r".*~$",
+    r".*\.bak$",
+]
+
+# Directories matching these patterns will be skipped
+skip_dirs = [
+    r".*\.git.*",
+    r".*\.svn.*",
+    r".*\.hg.*",
+]

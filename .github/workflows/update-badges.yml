@@ -1,0 +1,50 @@
+name: Update README Badges
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'Cargo.toml'
+      - 'README.md'
+  workflow_dispatch:
+
+jobs:
+  update-badges:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Install Rust
+      uses: dtolnay/rust-toolchain@stable
+
+    - name: Get version
+      id: version
+      run: |
+        VERSION=$(cargo metadata --no-deps --format-version 1 | jq -r '.packages[0].version')
+        echo "version=$VERSION" >> $GITHUB_OUTPUT
+
+    - name: Update badges in README
+      run: |
+        # Update version badge
+        sed -i "s|version.svg\?version=v[^)]*|version.svg\?version=v${{ steps.version.outputs.version }}|g" README.md
+        
+        # Update crates.io badge
+        sed -i "s|crates.io/v/flatten-rust[^)]*|crates.io/v/flatten-rust|g" README.md
+        
+        # Update last commit badge
+        sed -i "s|last-commit/[^)]*|last-commit/main|g" README.md
+
+    - name: Commit changes
+      run: |
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+        git add README.md
+        if git diff --staged --quiet; then
+          echo "No changes to commit"
+        else
+          git commit -m "Update README badges"
+          git push
+        fi
