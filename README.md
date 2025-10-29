@@ -1,14 +1,14 @@
 # Flatten Rust
 
-[![CI](https://github.com/YOUR_USERNAME/flatten-rust/workflows/CI/badge.svg)](https://github.com/YOUR_USERNAME/flatten-rust/actions)
-[![Security Audit](https://github.com/YOUR_USERNAME/flatten-rust/workflows/Security%20Audit/badge.svg)](https://github.com/YOUR_USERNAME/flatten-rust/actions)
+[![CI](https://github.com/An0nX/flatten-rust/workflows/CI/badge.svg)](https://github.com/An0nX/flatten-rust/actions)
+[![Security Audit](https://github.com/An0nX/flatten-rust/workflows/Security%20Audit/badge.svg)](https://github.com/An0nX/flatten-rust/actions)
 [![Crates.io](https://img.shields.io/crates/v/flatten-rust.svg)](https://crates.io/crates/flatten-rust)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Rust](https://img.shields.io/badge/rust-1.70+-orange.svg)](https://www.rust-lang.org)
-[![Platform](https://img.shields.io/badge/platform-linux%20%7C%20windows%20%7C%20macos-lightgrey.svg)](https://github.com/YOUR_USERNAME/flatten-rust)
-[![Binary Size](https://img.shields.io/badge/binary%20size-816KB-brightgreen.svg)](https://github.com/YOUR_USERNAME/flatten-rust)
-[![Last Commit](https://img.shields.io/github/last-commit/YOUR_USERNAME/flatten-rust/main.svg)](https://github.com/YOUR_USERNAME/flatten-rust/commits/main)
-[![Issues](https://img.shields.io/github/issues/YOUR_USERNAME/flatten-rust.svg)](https://github.com/YOUR_USERNAME/flatten-rust/issues)
+[![Platform](https://img.shields.io/badge/platform-linux%20%7C%20windows%20%7C%20macos-lightgrey.svg)](https://github.com/An0nX/flatten-rust)
+[![Binary Size](https://img.shields.io/badge/binary%20size-816KB-brightgreen.svg)](https://github.com/An0nX/flatten-rust)
+[![Last Commit](https://img.shields.io/github/last-commit/An0nX/flatten-rust/main.svg)](https://github.com/An0nX/flatten-rust/commits/main)
+[![Issues](https://img.shields.io/github/issues/An0nX/flatten-rust.svg)](https://github.com/An0nX/flatten-rust/issues)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](http://makeapullrequest.com)
 [![Downloads](https://img.shields.io/crates/d/flatten-rust.svg)](https://crates.io/crates/flatten-rust)
 
@@ -40,7 +40,7 @@ cargo install flatten-rust
 
 ### Сборка из исходников
 ```bash
-git clone https://github.com/YOUR_USERNAME/flatten-rust.git
+git clone https://github.com/An0nX/flatten-rust.git
 cd flatten-rust
 cargo build --release
 ```
@@ -49,7 +49,7 @@ cargo build --release
 
 ### Загрузка готовых бинарников
 
-Скачайте готовый бинарный файл из [Releases](https://github.com/YOUR_USERNAME/flatten-rust/releases):
+Скачайте готовый бинарный файл из [Releases](https://github.com/An0nX/flatten-rust/releases):
 
 - **Linux x86_64**: `flatten-rust-linux-x86_64.gz`
 - **Linux ARM64**: `flatten-rust-linux-aarch64.gz` 
@@ -272,7 +272,7 @@ MIT License - см. файл LICENSE для деталей.
 ## 🆘 Поддержка
 
 При возникновении проблем:
-1. Проверьте [Issues](https://github.com/YOUR_USERNAME/flatten-rust/issues)
+1. Проверьте [Issues](https://github.com/An0nX/flatten-rust/issues)
 2. Создайте новый issue с подробным описанием
 3. Укажите версию ОС, Rust и размер проекта
 
@@ -284,6 +284,6 @@ MIT License - см. файл LICENSE для деталей.
 
 ---
 
-[![GitHub stars](https://img.shields.io/github/stars/YOUR_USERNAME/flatten-rust.svg?style=social&label=Star)](https://github.com/YOUR_USERNAME/flatten-rust)
-[![GitHub forks](https://img.shields.io/github/forks/YOUR_USERNAME/flatten-rust.svg?style=social&label=Fork)](https://github.com/YOUR_USERNAME/flatten-rust/fork)
-[![GitHub watchers](https://img.shields.io/github/watchers/YOUR_USERNAME/flatten-rust.svg?style=social&label=Watch)](https://github.com/YOUR_USERNAME/flatten-rust)
+[![GitHub stars](https://img.shields.io/github/stars/An0nX/flatten-rust.svg?style=social&label=Star)](https://github.com/An0nX/flatten-rust)
+[![GitHub forks](https://img.shields.io/github/forks/An0nX/flatten-rust.svg?style=social&label=Fork)](https://github.com/An0nX/flatten-rust/fork)
+[![GitHub watchers](https://img.shields.io/github/watchers/An0nX/flatten-rust.svg?style=social&label=Watch)](https://github.com/An0nX/flatten-rust)

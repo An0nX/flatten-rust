@@ -19,9 +19,9 @@ Thank you for your interest in contributing to Flatten Rust! This document provi
 
 ### Code Contributions
 
-1. **Fork the repository**
+1. **Fork repository**
    ```bash
-   git clone https://github.com/YOUR_USERNAME/flatten-rust.git
+   git clone https://github.com/An0nX/flatten-rust.git
    ```
 
 2. **Create a feature branch**
@@ -228,10 +228,9 @@ Contributors are recognized in:
 
 ## 📞 Getting Help
 
-- Create an issue for questions
-- Join discussions in issues
-- Check existing documentation
-- Review similar issues
+- **Security**: Use GitHub Security Advisory
+- **General Issues**: [GitHub Issues](https://github.com/An0nX/flatten-rust/issues)
+- **Security Policy**: [SECURITY.md](https://github.com/An0nX/flatten-rust/blob/main/SECURITY.md)
 
 ## 📄 License
 
