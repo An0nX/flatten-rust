@@ -56,7 +56,7 @@ jobs:
 
     steps:
     - name: Checkout code
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
 
     - name: Install Rust
       uses: dtolnay/rust-toolchain@stable
@@ -85,14 +85,6 @@ jobs:
       if: runner.os != 'Windows'
       run: strip target/${{ matrix.target }}/release/${{ matrix.artifact_name }}
 
-    - name: Compress binary
-      if: runner.os != 'Windows'
-      run: gzip -c target/${{ matrix.target }}/release/${{ matrix.artifact_name }} > ${{ matrix.asset_name }}.gz
-
-    - name: Compress binary (Windows)
-      if: runner.os == 'Windows'
-      run: Compress-Archive -Path target/${{ matrix.target }}/release/${{ matrix.artifact_name }} -DestinationPath ${{ matrix.asset_name }}.zip
-
     - name: Upload Release Asset (Unix)
       if: runner.os != 'Windows'
       uses: actions/upload-release-asset@v1
@@ -100,9 +92,9 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         upload_url: ${{ needs.create-release.outputs.upload_url }}
-        asset_path: ./${{ matrix.asset_name }}.gz
-        asset_name: ${{ matrix.asset_name }}.gz
-        asset_content_type: application/gzip
+        asset_path: target/${{ matrix.target }}/release/${{ matrix.artifact_name }}
+        asset_name: ${{ matrix.asset_name }}
+        asset_content_type: application/octet-stream
 
     - name: Upload Release Asset (Windows)
       if: runner.os == 'Windows'
@@ -111,9 +103,9 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         upload_url: ${{ needs.create-release.outputs.upload_url }}
-        asset_path: ./${{ matrix.asset_name }}.zip
-        asset_name: ${{ matrix.asset_name }}.zip
-        asset_content_type: application/zip
+        asset_path: target/${{ matrix.target }}/release/${{ matrix.artifact_name }}
+        asset_name: ${{ matrix.asset_name }}.exe
+        asset_content_type: application/octet-stream
 
   publish-cargo:
     name: Publish to crates.io
@@ -121,7 +113,7 @@ jobs:
     needs: build-and-upload
     steps:
     - name: Checkout code
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
 
     - name: Install Rust
       uses: dtolnay/rust-toolchain@stable
