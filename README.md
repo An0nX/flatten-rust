@@ -5,7 +5,6 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Rust](https://img.shields.io/badge/rust-1.70+-orange.svg)](https://www.rust-lang.org)
 [![Platform](https://img.shields.io/badge/platform-linux%20%7C%20windows%20%7C%20macos-lightgrey.svg)](https://github.com/An0nX/flatten-rust)
-[![Binary Size](https://img.shields.io/badge/binary%20size-816KB-brightgreen.svg)](https://github.com/An0nX/flatten-rust)
 [![Last Commit](https://img.shields.io/github/last-commit/An0nX/flatten-rust/main.svg)](https://github.com/An0nX/flatten-rust/commits/main)
 [![Issues](https://img.shields.io/github/issues/An0nX/flatten-rust.svg)](https://github.com/An0nX/flatten-rust/issues)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](http://makeapullrequest.com)
