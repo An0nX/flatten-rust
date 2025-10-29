@@ -173,14 +173,12 @@ impl FlattenConfig {
 
         // Check for Rust projects
         if folder.join("Cargo.toml").exists() {
-            detection.skip_folders.extend(vec![
-                "target".to_string(),
-                "Cargo.lock".to_string(),
-            ]);
-            detection.skip_extensions.extend(vec![
-                "rlib".to_string(),
-                "rmeta".to_string(),
-            ]);
+            detection
+                .skip_folders
+                .extend(vec!["target".to_string(), "Cargo.lock".to_string()]);
+            detection
+                .skip_extensions
+                .extend(vec!["rlib".to_string(), "rmeta".to_string()]);
         }
 
         // Check for Node.js projects
@@ -228,10 +226,11 @@ impl FlattenConfig {
         }
 
         // Check for Python projects
-        if folder.join("requirements.txt").exists() 
-            || folder.join("setup.py").exists() 
+        if folder.join("requirements.txt").exists()
+            || folder.join("setup.py").exists()
             || folder.join("pyproject.toml").exists()
-            || folder.join("Pipfile").exists() {
+            || folder.join("Pipfile").exists()
+        {
             detection.skip_folders.extend(vec![
                 "__pycache__".to_string(),
                 ".pytest_cache".to_string(),
@@ -276,7 +275,10 @@ impl FlattenConfig {
         }
 
         // Check for C# projects
-        if folder.join("*.csproj").exists() || folder.join("*.sln").exists() || folder.join("project.json").exists() {
+        if folder.join("*.csproj").exists()
+            || folder.join("*.sln").exists()
+            || folder.join("project.json").exists()
+        {
             detection.skip_folders.extend(vec![
                 "bin".to_string(),
                 "obj".to_string(),
@@ -315,7 +317,10 @@ impl FlattenConfig {
         }
 
         // Check for C# projects
-        if folder.join("*.csproj").exists() || folder.join("*.sln").exists() || folder.join("project.json").exists() {
+        if folder.join("*.csproj").exists()
+            || folder.join("*.sln").exists()
+            || folder.join("project.json").exists()
+        {
             detection.skip_folders.extend(vec![
                 "bin".to_string(),
                 "obj".to_string(),
@@ -335,9 +340,7 @@ impl FlattenConfig {
 
         // Check for Go projects
         if folder.join("go.mod").exists() || folder.join("go.sum").exists() {
-            detection.skip_folders.extend(vec![
-                "vendor".to_string(),
-            ]);
+            detection.skip_folders.extend(vec!["vendor".to_string()]);
         }
         if folder.join("CMakeLists.txt").exists() || folder.join("Makefile").exists() {
             detection.skip_folders.extend(vec![
@@ -365,17 +368,14 @@ impl FlattenConfig {
 
         // Check for Ruby projects
         if folder.join("Gemfile").exists() || folder.join("Gemfile.lock").exists() {
-            detection.skip_folders.extend(vec![
-                "vendor".to_string(),
-                ".bundle".to_string(),
-            ]);
+            detection
+                .skip_folders
+                .extend(vec!["vendor".to_string(), ".bundle".to_string()]);
         }
 
         // Check for PHP projects
         if folder.join("composer.json").exists() || folder.join("composer.lock").exists() {
-            detection.skip_folders.extend(vec![
-                "vendor".to_string(),
-            ]);
+            detection.skip_folders.extend(vec!["vendor".to_string()]);
         }
 
         Ok(detection)
@@ -417,8 +417,7 @@ fn print_folder_structure<W: Write>(
         .as_bytes(),
     )?;
 
-    let mut walkdir = WalkDir::new(directory)
-        .follow_links(false);
+    let mut walkdir = WalkDir::new(directory).follow_links(false);
 
     if config.max_depth > 0 {
         walkdir = walkdir.max_depth(config.max_depth);
@@ -556,8 +555,7 @@ fn process_files_parallel(
 fn collect_files(directory: &Path, config: &FlattenConfig) -> Result<Vec<PathBuf>> {
     let mut files = Vec::new();
 
-    let mut walkdir = WalkDir::new(directory)
-        .follow_links(false);
+    let mut walkdir = WalkDir::new(directory).follow_links(false);
 
     if config.max_depth > 0 {
         walkdir = walkdir.max_depth(config.max_depth);
@@ -627,7 +625,9 @@ fn main() -> Result<()> {
                 .write(true)
                 .truncate(true)
                 .open(&args.output)
-                .with_context(|| format!("Failed to create output file: {}", args.output.display()))?,
+                .with_context(|| {
+                    format!("Failed to create output file: {}", args.output.display())
+                })?,
         )
     } else {
         None
@@ -745,12 +745,22 @@ fn main() -> Result<()> {
     println!();
     println!("{} Flatten completed successfully!", style("✓").green());
     println!("Total files processed: {}", total);
-    
+
     if config.show_stats {
-        println!("Total bytes processed: {} MB", total_bytes_processed / 1_048_576);
-        println!("Average file size: {} KB", if total > 0 { total_bytes_processed / total as u64 / 1024 } else { 0 });
+        println!(
+            "Total bytes processed: {} MB",
+            total_bytes_processed / 1_048_576
+        );
+        println!(
+            "Average file size: {} KB",
+            if total > 0 {
+                total_bytes_processed / total as u64 / 1024
+            } else {
+                0
+            }
+        );
     }
-    
+
     if !config.dry_run {
         println!("Output written to: {}", args.output.display());
     } else {

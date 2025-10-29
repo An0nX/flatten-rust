@@ -23,7 +23,7 @@ fn test_basic_flatten() {
             temp_dir.path().to_str().unwrap(),
             "--output",
             output_file.to_str().unwrap(),
-            "--include-hidden",  // Include hidden files for testing
+            "--include-hidden", // Include hidden files for testing
         ])
         .current_dir(env!("CARGO_MANIFEST_DIR"))
         .output()
@@ -31,7 +31,7 @@ fn test_basic_flatten() {
 
     let stdout = String::from_utf8_lossy(&output.stdout);
     let stderr = String::from_utf8_lossy(&output.stderr);
-    
+
     println!("stdout: {}", stdout);
     println!("stderr: {}", stderr);
 
@@ -45,7 +45,7 @@ fn test_basic_flatten() {
     let content = fs::read_to_string(&output_file).unwrap();
     println!("Content length: {}", content.len());
     println!("Content preview: {}", &content[..content.len().min(500)]);
-    
+
     assert!(content.contains("FOLDER STRUCTURE"));
     // Only check for FLATTENED CONTENT if files were found
     if content.contains("src/main.rs") {

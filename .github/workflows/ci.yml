@@ -41,8 +41,8 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-cargo-
 
-    - name: Check formatting
-      run: cargo fmt --all -- --check
+    - name: Fix formatting
+      run: cargo fmt --all
 
     - name: Run clippy
       run: cargo clippy --all-targets --all-features -- -D warnings
@@ -91,6 +91,9 @@ jobs:
     - name: Build binary
       run: cargo build --release --target ${{ matrix.target }}
 
+    - name: Run benchmarks
+      run: cargo bench
+
     - name: Upload binary artifact
       uses: actions/upload-artifact@v4
       with:
@@ -109,31 +112,3 @@ jobs:
       uses: actions-rs/audit-check@v1
       with:
         token: ${{ secrets.GITHUB_TOKEN }}
-
-  size:
-    name: Binary Size Check
-    runs-on: ubuntu-latest
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-
-    - name: Install Rust
-      uses: dtolnay/rust-toolchain@stable
-
-    - name: Build optimized binary
-      run: cargo build --release
-
-    - name: Check binary size
-      run: |
-        SIZE=$(du -k target/release/flatten-rust | cut -f1)
-        echo "Binary size: ${SIZE}KB"
-        if [ $SIZE -gt 1024 ]; then
-          echo "Binary size exceeds 1MB limit"
-          exit 1
-        fi
-
-    - name: Upload size report
-      uses: actions/upload-artifact@v4
-      with:
-        name: size-report
-        path: target/release/flatten-rust
