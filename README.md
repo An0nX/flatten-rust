@@ -1,7 +1,6 @@
 # Flatten Rust
 
 [![CI](https://github.com/An0nX/flatten-rust/workflows/CI/badge.svg)](https://github.com/An0nX/flatten-rust/actions)
-[![Security Audit](https://github.com/An0nX/flatten-rust/workflows/Security%20Audit/badge.svg)](https://github.com/An0nX/flatten-rust/actions)
 [![Crates.io](https://img.shields.io/crates/v/flatten-rust.svg)](https://crates.io/crates/flatten-rust)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Rust](https://img.shields.io/badge/rust-1.70+-orange.svg)](https://www.rust-lang.org)
