@@ -127,7 +127,6 @@ main() {
         ["x86_64-pc-windows-gnu"]="flatten-rust-$VERSION-windows-x86_64"
         ["x86_64-apple-darwin"]="flatten-rust-$VERSION-macos-x86_64"
         ["aarch64-apple-darwin"]="flatten-rust-$VERSION-macos-arm64"
-        ["aarch64-unknown-linux-gnu"]="flatten-rust-$VERSION-linux-arm64"
     )
     
     # Optional: Add more targets
@@ -212,7 +211,7 @@ while [[ $# -gt 0 ]]; do
             echo "  x86_64-pc-windows-gnu      Windows x86_64"
             echo "  x86_64-apple-darwin        macOS x86_64"
             echo "  aarch64-apple-darwin       macOS ARM64"
-            echo "  aarch64-unknown-linux-gnu   Linux ARM64"
+            
             exit 0
             ;;
         *)
