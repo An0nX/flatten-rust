@@ -1,6 +1,10 @@
+mod config;
+mod exclusions;
+
 use anyhow::{Context, Result};
 use clap::Parser;
 use console::{style, Emoji};
+use exclusions::ExclusionManager;
 use indicatif::{ProgressBar, ProgressStyle};
 use memmap2::MmapOptions;
 use rayon::prelude::*;
@@ -18,59 +22,97 @@ static ROCKET: Emoji<'_, '_> = Emoji("🚀", "=>");
 
 #[derive(Parser)]
 #[command(name = "flatten-rust")]
-#[command(about = "High-performance codebase flattening tool")]
+#[command(about = "High-performance codebase flattening tool with intelligent exclusions")]
 #[command(version)]
+#[command(after_help = r##"
+EXCLUSION MANAGEMENT:
+  The tool uses gitignore templates from toptal.com API for intelligent exclusions.
+  Templates are cached in ~/.flatten/ and updated automatically every 24 hours.
+
+  Available commands for exclusion management:
+    -l, --list-templates           List all available gitignore templates
+    -e, --enable-template <TEMPLATE>  Enable specific template
+    -D, --disable-template <TEMPLATE>  Disable specific template
+    -u, --force-update            Force update templates from API
+    -c, --add-custom <PATTERN>    Add custom exclusion pattern
+    -r, --remove-custom <PATTERN> Remove custom exclusion pattern
+    -n, --check-internet <BOOL>   Enable/disable internet connectivity check
+    --show-enabled                 Show currently enabled templates
+
+  Common templates: rust, node, python, java, csharp, go, php, ruby, android, ios, 
+                    visualstudiocode, visualstudio, eclipse, intellij, macos, linux, windows
+
+  SHORTCUTS (Easy to remember):
+    -f, --folders <FOLDERS>       Folders to process (f for folders)
+    -s, --skip-folders <FOLDERS>  Folders to skip (s for skip)
+    -o, --output <FILE>           Output file (o for output)
+    -a, --auto-detect             Auto-detect project type (a for auto)
+    -t, --threads <NUM>           Parallel threads (t for threads)
+    -m, --max-file-size <SIZE>    Max file size (m for max)
+    -d, --dry-run                 Dry run (d for dry)
+    -S, --stats                   Show statistics (S for stats)
+    -k, --show-skipped            Show skipped folders (k for keep)
+    -l, --list-templates          List templates (l for list)
+    -e, --enable-template <TMPL>  Enable template (e for enable)
+    -D, --disable-template <TMPL> Disable template (D for disable)
+    -u, --force-update            Force update (u for update)
+    -n, --check-internet <BOOL>   Check internet (n for network)
+
+EXAMPLES:
+  # Basic usage with auto-detection
+  flatten-rust -f ./project -a
+
+  # Manual template selection
+  flatten-rust -f ./project -e rust -e node
+
+  # Performance options
+  flatten-rust -f ./project -t 8 -m 50MB
+
+  # Template management
+  flatten-rust -l
+  flatten-rust -u
+  flatten-rust -n false
+
+  # Advanced usage
+  flatten-rust -f ./project -s "temp" -s "cache" -x "log" -x "tmp" -d
+"##)]
 struct Args {
     /// Base folders to process
-    #[arg(long = "folders", num_args = 1..)]
+    #[arg(long = "folders", short = 'f', num_args = 1..)]
     folders: Vec<PathBuf>,
 
     /// Folders to skip during processing (supports glob patterns)
-    #[arg(long = "skip-folders", num_args = 0.., default_values = [
-        "node_modules", ".git", "target", "dist", "build", "vendor", ".vscode", ".idea",
-        "__pycache__", ".pytest_cache", ".mypy_cache", ".tox", "venv", ".venv", "env",
-        ".next", ".nuxt", ".output", ".angular", "coverage", ".nyc_output", "htmlcov",
-        ".coverage", "site-packages", "eggs", ".eggs", "pip-wheel-metadata",
-        "cmake-build-debug", "cmake-build-release", ".gradle", ".idea", ".vs",
-        "packages", ".pnpm-store", ".npm", ".yarn", ".yarn-integrity",
-        "obj", "bin", "Debug", "Release", "x64", "x86", "out", ".next", ".nuxt"
+    #[arg(long = "skip-folders", short = 's', num_args = 0.., default_values = [
+        ".git", "node_modules", "target", "dist", "build"
     ])]
     skip_folders: Vec<String>,
 
-    /// Print system instructions
-    #[arg(long = "system_instructions")]
-    system_instructions: bool,
+    
 
-    /// Output file name (default: codebase.md)
-    #[arg(long = "output", default_value = "codebase.md")]
+    /// Output file name
+    #[arg(long = "output", short = 'o', default_value = "codebase.md")]
     output: PathBuf,
 
     /// Show skipped folders in tree structure
-    #[arg(long = "show-skipped")]
+    #[arg(long = "show-skipped", short = 'k')]
     show_skipped: bool,
 
     /// Number of parallel file processing threads
-    #[arg(long = "threads", default_value = "0")]
+    #[arg(long = "threads", short = 't', default_value = "0")]
     threads: usize,
 
     /// Maximum file size to process in bytes (0 = unlimited)
-    #[arg(long = "max-file-size", default_value = "104857600")]
+    #[arg(long = "max-file-size", short = 'm', default_value = "104857600")]
     max_file_size: u64,
 
-    /// Binary file extensions to skip (supports glob patterns)
-    #[arg(long = "skip-extensions", num_args = 0.., default_values = [
-        "exe", "dll", "so", "dylib", "bin", "img", "iso", "zip", "tar", "gz", "7z", "rar",
-        "bz2", "xz", "deb", "rpm", "dmg", "pkg", "msi", "apk", "ipa", "msi",
-        "jpg", "jpeg", "png", "gif", "bmp", "tiff", "webp", "ico", "svg", "psd", "ai",
-        "mp3", "mp4", "avi", "mov", "wmv", "flv", "webm", "mkv", "wav", "flac", "ogg",
-        "pdf", "doc", "docx", "xls", "xlsx", "ppt", "pptx", "odt", "ods", "odp",
-        "ttf", "otf", "woff", "woff2", "eot", "class", "jar", "war", "ear", "pyc",
-        "pyo", "pyd", "egg", "whl", "so", "dll", "dylib", "a", "lib", "obj", "o"
+    /// File extension patterns to skip
+    #[arg(long = "skip-extensions", short = 'x', num_args = 0.., default_values = [
+        "exe", "dll", "so", "dylib", "bin", "jar", "apk", "ipa", "msi", "class", "pyc"
     ])]
     skip_extensions: Vec<String>,
 
     /// Auto-detect project type and configure appropriate skips
-    #[arg(long = "auto-detect")]
+    #[arg(long = "auto-detect", short = 'a')]
     auto_detect: bool,
 
     /// Include hidden files and folders
@@ -82,52 +124,42 @@ struct Args {
     max_depth: usize,
 
     /// Show detailed statistics after processing
-    #[arg(long = "stats")]
+    #[arg(long = "stats", short = 'S')]
     show_stats: bool,
 
     /// Dry run - show what would be processed without creating output
-    #[arg(long = "dry-run")]
+    #[arg(long = "dry-run", short = 'd')]
     dry_run: bool,
+
+    /// List all available gitignore templates
+    #[arg(long = "list-templates", short = 'l')]
+    list_templates: bool,
+
+    /// Enable specific gitignore template
+    #[arg(long = "enable-template", short = 'e', num_args = 1..)]
+    enable_templates: Vec<String>,
+
+    /// Disable specific gitignore template
+    #[arg(long = "disable-template", short = 'D', num_args = 1..)]
+    disable_templates: Vec<String>,
+
+    /// Force update templates from API
+    #[arg(long = "force-update", short = 'u')]
+    force_update: bool,
+
+    /// Enable/disable internet connectivity check
+    #[arg(long = "check-internet", short = 'n')]
+    check_internet: Option<bool>,
+
+    /// Show enabled templates
+    #[arg(long = "show-enabled")]
+    show_enabled: bool,
 }
 
-const SYSTEM_INSTRUCTIONS: &str = r##"## System Instructions for Language Model Assistance in Code Debugging
-### Codebase Markdown File Structure:
-- The codebase markdown file represents the actual codebase structure and content.
-- It begins with a directory tree representation:
-  ```
-  ### DIRECTORY path/to/file/tree FOLDER STRUCTURE ###
-  (file tree representation)
-  ### DIRECTORY path/to/file/tree FOLDER STRUCTURE ###
-  ```
-- Following the directory tree, the contents of each file are displayed:
-  ```
-  ### path/to/file1 BEGIN ###
-  (content of file1)
-  ### path/to/file1 END ###
-  
-  ### path/to/file2 BEGIN ###
-  (content of file2)
-  ### path/to/file2 END ###
-  ```
-### Guidelines for Interaction:
-- Respond to queries based on the explicit content provided within the markdown file.
-- Avoid making assumptions about the code without clear evidence presented in the file content.
-- When seeking specific implementation details, refer to the corresponding section in the markdown file, for example:
-  ```
-  ### folder1/folder2/myfile.ts BEGIN ###
-  (specific implementation details)
-  ### folder1/folder2/myfile.ts END ###
-  ```
-### Objective:
-- The primary objective is to facilitate understanding of codebase by providing accurate information and guidance strictly adhering to the content available in the markdown file."##;
 
-#[derive(Default)]
-struct ProjectDetection {
-    skip_folders: HashSet<String>,
-    skip_extensions: HashSet<String>,
-}
 
 struct FlattenConfig {
+    exclusion_manager: Option<ExclusionManager>,
     skip_folders: HashSet<String>,
     skip_extensions: HashSet<String>,
     show_skipped: bool,
@@ -139,8 +171,9 @@ struct FlattenConfig {
 }
 
 impl FlattenConfig {
-    fn new(args: &Args) -> Self {
+    async fn new(args: &Args) -> Result<Self> {
         let mut config = Self {
+            exclusion_manager: None,
             skip_folders: args.skip_folders.iter().cloned().collect(),
             skip_extensions: args.skip_extensions.iter().cloned().collect(),
             show_skipped: args.show_skipped,
@@ -151,254 +184,139 @@ impl FlattenConfig {
             dry_run: args.dry_run,
         };
 
-        if args.auto_detect {
-            config = Self::auto_detect_config(config, &args.folders);
+        // Initialize exclusion manager if needed
+        if args.auto_detect || !args.enable_templates.is_empty() || args.force_update || 
+           args.list_templates || args.show_enabled {
+            
+            let mut exclusion_manager = ExclusionManager::new().await?;
+            
+            // Handle force update
+            if args.force_update {
+                exclusion_manager.force_update_templates().await?;
+            }
+            
+            // Handle internet connectivity setting
+            if let Some(check_internet) = args.check_internet {
+                exclusion_manager.set_check_internet(check_internet).await?;
+            }
+            
+            // Handle template management commands
+            if args.list_templates {
+                Self::handle_list_templates(&exclusion_manager).await?;
+                std::process::exit(0);
+            }
+            
+            if args.show_enabled {
+                Self::handle_show_enabled(&exclusion_manager);
+                std::process::exit(0);
+            }
+            
+            // Enable specific templates
+            for template in &args.enable_templates {
+                exclusion_manager.enable_template(template.clone());
+            }
+            
+            // Disable specific templates
+            for template in &args.disable_templates {
+                exclusion_manager.disable_template(template);
+            }
+            
+            // Auto-detect project types
+            if args.auto_detect && !args.folders.is_empty() {
+                for folder in &args.folders {
+                    if folder.exists() {
+                        exclusion_manager.enable_templates_for_project(folder).await?;
+                    }
+                }
+            }
+            
+            // Update config with exclusion patterns
+            if !args.enable_templates.is_empty() || args.auto_detect {
+                let folder_patterns = exclusion_manager.get_folder_patterns().await;
+                let extension_patterns = exclusion_manager.get_extension_patterns().await;
+                
+                config.skip_folders.extend(folder_patterns);
+                config.skip_extensions.extend(extension_patterns);
+            }
+            
+            config.exclusion_manager = Some(exclusion_manager);
         }
 
-        config
+        Ok(config)
     }
-
-    fn auto_detect_config(mut config: Self, folders: &[PathBuf]) -> Self {
-        for folder in folders {
-            if let Ok(detected) = Self::detect_project_type(folder) {
-                config.skip_folders.extend(detected.skip_folders);
-                config.skip_extensions.extend(detected.skip_extensions);
+    
+    /// Handle list templates command
+    async fn handle_list_templates(exclusion_manager: &ExclusionManager) -> Result<()> {
+        let templates = exclusion_manager.get_available_templates().await;
+        println!("Available gitignore templates ({} total):", templates.len());
+        println!();
+        
+        // Group templates by category
+        let mut categories: std::collections::HashMap<&str, Vec<&str>> = std::collections::HashMap::new();
+        
+        for template in &templates {
+            let category = if template.contains("studio") || template.contains("code") || 
+                             template.contains("intellij") || template.contains("pycharm") ||
+                             template.contains("phpstorm") || template.contains("webstorm") ||
+                             template.contains("rubymine") || template.contains("clion") ||
+                             template.contains("goland") || template.contains("androidstudio") {
+                "IDEs"
+            } else if template.contains("macos") || template.contains("linux") || template.contains("windows") ||
+                      template.contains("android") || template.contains("ios") {
+                "Platforms"
+            } else if template.contains("visualstudio") || template.contains("eclipse") ||
+                      template.contains("sublime") || template.contains("vim") ||
+                      template.contains("emacs") || template.contains("atom") {
+                "Editors"
+            } else {
+                "Languages"
+            };
+            
+            categories.entry(category).or_default().push(template);
+        }
+        
+        // Print templates by category
+        for (category, mut templates) in categories {
+            templates.sort();
+            println!("{}:", category);
+            for template in templates.chunks(5) {
+                println!("  {}", template.join(", "));
+            }
+            println!();
+        }
+        
+        Ok(())
+    }
+    
+    /// Handle show enabled templates command
+    fn handle_show_enabled(exclusion_manager: &ExclusionManager) {
+        let enabled = exclusion_manager.get_enabled_templates();
+        if enabled.is_empty() {
+            println!("No templates currently enabled.");
+        } else {
+            println!("Enabled templates ({}):", enabled.len());
+            for template in enabled {
+                println!("  - {}", template);
             }
         }
-        config
-    }
-
-    fn detect_project_type(folder: &Path) -> Result<ProjectDetection> {
-        let mut detection = ProjectDetection::default();
-
-        // Check for Rust projects
-        if folder.join("Cargo.toml").exists() {
-            detection
-                .skip_folders
-                .extend(vec!["target".to_string(), "Cargo.lock".to_string()]);
-            detection
-                .skip_extensions
-                .extend(vec!["rlib".to_string(), "rmeta".to_string()]);
-        }
-
-        // Check for Node.js projects
-        if folder.join("package.json").exists() || folder.join("package-lock.json").exists() {
-            detection.skip_folders.extend(vec![
-                "node_modules".to_string(),
-                ".npm".to_string(),
-                ".pnpm-store".to_string(),
-                ".yarn".to_string(),
-                ".yarn-integrity".to_string(),
-                "dist".to_string(),
-                "build".to_string(),
-                ".next".to_string(),
-                ".nuxt".to_string(),
-                ".output".to_string(),
-                ".angular".to_string(),
-                "coverage".to_string(),
-                ".nyc_output".to_string(),
-            ]);
-            detection.skip_extensions.extend(vec![
-                "js.map".to_string(),
-                "css.map".to_string(),
-                "tsbuildinfo".to_string(),
-            ]);
-        }
-
-        // Check for Angular projects (specific detection in addition to Node.js)
-        if folder.join("angular.json").exists() || folder.join(".angular-cli.json").exists() {
-            detection.skip_folders.extend(vec![
-                ".angular".to_string(),
-                "dist".to_string(),
-                ".nuxt".to_string(),
-                ".output".to_string(),
-                "coverage".to_string(),
-                ".coverage".to_string(),
-            ]);
-            detection.skip_extensions.extend(vec![
-                "js.map".to_string(),
-                "css.map".to_string(),
-                "ngsummary.json".to_string(),
-                "ngfactory".to_string(),
-                "ngstyle".to_string(),
-                "ngtemplate".to_string(),
-            ]);
-        }
-
-        // Check for Python projects
-        if folder.join("requirements.txt").exists()
-            || folder.join("setup.py").exists()
-            || folder.join("pyproject.toml").exists()
-            || folder.join("Pipfile").exists()
-        {
-            detection.skip_folders.extend(vec![
-                "__pycache__".to_string(),
-                ".pytest_cache".to_string(),
-                ".mypy_cache".to_string(),
-                ".tox".to_string(),
-                "venv".to_string(),
-                ".venv".to_string(),
-                "env".to_string(),
-                ".env".to_string(),
-                "site-packages".to_string(),
-                "eggs".to_string(),
-                ".eggs".to_string(),
-                "pip-wheel-metadata".to_string(),
-                ".coverage".to_string(),
-                "htmlcov".to_string(),
-            ]);
-            detection.skip_extensions.extend(vec![
-                "pyc".to_string(),
-                "pyo".to_string(),
-                "pyd".to_string(),
-                "egg".to_string(),
-                "whl".to_string(),
-            ]);
-        }
-
-        // Check for Java projects
-        if folder.join("pom.xml").exists() || folder.join("build.gradle").exists() {
-            detection.skip_folders.extend(vec![
-                "target".to_string(),
-                "build".to_string(),
-                ".gradle".to_string(),
-                ".idea".to_string(),
-                ".vs".to_string(),
-                "out".to_string(),
-            ]);
-            detection.skip_extensions.extend(vec![
-                "class".to_string(),
-                "jar".to_string(),
-                "war".to_string(),
-                "ear".to_string(),
-            ]);
-        }
-
-        // Check for C# projects
-        if folder.join("*.csproj").exists()
-            || folder.join("*.sln").exists()
-            || folder.join("project.json").exists()
-        {
-            detection.skip_folders.extend(vec![
-                "bin".to_string(),
-                "obj".to_string(),
-                "packages".to_string(),
-                ".vs".to_string(),
-                ".vscode".to_string(),
-                "Properties".to_string(),
-            ]);
-            detection.skip_extensions.extend(vec![
-                "exe".to_string(),
-                "dll".to_string(),
-                "pdb".to_string(),
-                "cache".to_string(),
-                "user".to_string(),
-            ]);
-        }
-
-        // Check for Angular projects (already covered by Node.js, but add specific Angular exclusions)
-        if folder.join("angular.json").exists() || folder.join(".angular-cli.json").exists() {
-            detection.skip_folders.extend(vec![
-                ".angular".to_string(),
-                "dist".to_string(),
-                ".nuxt".to_string(),
-                ".output".to_string(),
-                "coverage".to_string(),
-                ".coverage".to_string(),
-            ]);
-            detection.skip_extensions.extend(vec![
-                "js.map".to_string(),
-                "css.map".to_string(),
-                "ngsummary.json".to_string(),
-                "ngfactory".to_string(),
-                "ngstyle".to_string(),
-                "ngtemplate".to_string(),
-            ]);
-        }
-
-        // Check for C# projects
-        if folder.join("*.csproj").exists()
-            || folder.join("*.sln").exists()
-            || folder.join("project.json").exists()
-        {
-            detection.skip_folders.extend(vec![
-                "bin".to_string(),
-                "obj".to_string(),
-                "packages".to_string(),
-                ".vs".to_string(),
-                ".vscode".to_string(),
-                "Properties".to_string(),
-            ]);
-            detection.skip_extensions.extend(vec![
-                "exe".to_string(),
-                "dll".to_string(),
-                "pdb".to_string(),
-                "cache".to_string(),
-                "user".to_string(),
-            ]);
-        }
-
-        // Check for Go projects
-        if folder.join("go.mod").exists() || folder.join("go.sum").exists() {
-            detection.skip_folders.extend(vec!["vendor".to_string()]);
-        }
-        if folder.join("CMakeLists.txt").exists() || folder.join("Makefile").exists() {
-            detection.skip_folders.extend(vec![
-                "cmake-build-debug".to_string(),
-                "cmake-build-release".to_string(),
-                "build".to_string(),
-                "obj".to_string(),
-                "bin".to_string(),
-                "Debug".to_string(),
-                "Release".to_string(),
-                "x64".to_string(),
-                "x86".to_string(),
-            ]);
-            detection.skip_extensions.extend(vec![
-                "o".to_string(),
-                "obj".to_string(),
-                "exe".to_string(),
-                "dll".to_string(),
-                "so".to_string(),
-                "dylib".to_string(),
-                "a".to_string(),
-                "lib".to_string(),
-            ]);
-        }
-
-        // Check for Ruby projects
-        if folder.join("Gemfile").exists() || folder.join("Gemfile.lock").exists() {
-            detection
-                .skip_folders
-                .extend(vec!["vendor".to_string(), ".bundle".to_string()]);
-        }
-
-        // Check for PHP projects
-        if folder.join("composer.json").exists() || folder.join("composer.lock").exists() {
-            detection.skip_folders.extend(vec!["vendor".to_string()]);
-        }
-
-        Ok(detection)
     }
 
     fn should_skip_path(&self, path: &Path) -> bool {
-        if let Some(name) = path.file_name() {
-            if let Some(name_str) = name.to_str() {
-                // Skip hidden files unless explicitly included
-                if !self.include_hidden && name_str.starts_with('.') {
-                    return true;
-                }
-                return self.skip_folders.contains(name_str);
+        if let Some(name) = path.file_name()
+            && let Some(name_str) = name.to_str() {
+            // Skip hidden files unless explicitly included
+            if !self.include_hidden && name_str.starts_with('.') {
+                return true;
             }
+            return self.skip_folders.contains(name_str);
         }
         false
     }
 
     fn should_skip_file(&self, path: &Path) -> bool {
-        if let Some(extension) = path.extension() {
-            if let Some(ext_str) = extension.to_str() {
-                return self.skip_extensions.contains(ext_str);
-            }
+        if let Some(extension) = path.extension()
+            && let Some(ext_str) = extension.to_str() {
+            return self.skip_extensions.contains(ext_str);
         }
         false
     }
@@ -493,7 +411,7 @@ fn print_folder_structure<W: Write>(
     Ok(())
 }
 
-fn read_file_content_fast(path: &Path, max_size: u64) -> Result<String> {
+fn read_file_content_fast(path: &Path, max_size: u64) -> Result<(String, u64)> {
     let file =
         File::open(path).with_context(|| format!("Failed to open file: {}", path.display()))?;
 
@@ -503,10 +421,10 @@ fn read_file_content_fast(path: &Path, max_size: u64) -> Result<String> {
     let file_size = metadata.len();
 
     if max_size > 0 && file_size > max_size {
-        return Ok(format!(
+        return Ok((format!(
             "[File too large: {} bytes, max size: {} bytes]",
             file_size, max_size
-        ));
+        ), file_size));
     }
 
     // Use memory mapping for better performance
@@ -516,7 +434,10 @@ fn read_file_content_fast(path: &Path, max_size: u64) -> Result<String> {
             .with_context(|| format!("Failed to memory map file: {}", path.display()))?;
 
         // Try to decode as UTF-8, fall back to lossy conversion
-        String::from_utf8(mmap.to_vec()).or_else(|_| Ok(String::from_utf8_lossy(&mmap).to_string()))
+        let content = String::from_utf8(mmap.to_vec())
+            .unwrap_or_else(|_| String::from_utf8_lossy(&mmap).to_string());
+        
+        Ok((content, file_size))
     }
 }
 
@@ -524,18 +445,19 @@ fn process_files_parallel(
     files: Vec<PathBuf>,
     config: &FlattenConfig,
     progress_bar: Option<ProgressBar>,
-) -> Vec<(PathBuf, Result<String>)> {
+) -> Vec<(PathBuf, Result<(String, u64)>)> {
     let processed_count = AtomicUsize::new(0);
     let _total_files = files.len();
 
-    let results: Vec<(PathBuf, Result<String>)> = files
+    let results: Vec<(PathBuf, Result<(String, u64)>)> = files
         .into_par_iter()
         .map(|file_path| {
             let result = if config.should_skip_file(&file_path) {
-                Ok(format!(
+                // Для пропущенных файлов возвращаем размер 0
+                Ok((format!(
                     "[Binary file skipped: {}]",
                     file_path.file_name().unwrap_or_default().to_string_lossy()
-                ))
+                ), 0))
             } else {
                 read_file_content_fast(&file_path, config.max_file_size)
             };
@@ -579,14 +501,19 @@ fn collect_files(directory: &Path, config: &FlattenConfig) -> Result<Vec<PathBuf
     Ok(files)
 }
 
-fn main() -> Result<()> {
+#[tokio::main]
+async fn main() -> Result<()> {
     let args = Args::parse();
 
-    if args.system_instructions {
-        println!("{}", SYSTEM_INSTRUCTIONS);
-        if args.folders.is_empty() {
-            return Ok(());
-        }
+    
+
+    // Handle template management commands that don't require folders
+    if (args.list_templates || args.show_enabled || args.force_update ||
+       !args.enable_templates.is_empty() || !args.disable_templates.is_empty())
+        && args.folders.is_empty() {
+        // Just create config to handle the commands
+        let _ = FlattenConfig::new(&args).await?;
+        return Ok(());
     }
 
     if args.folders.is_empty() {
@@ -602,7 +529,7 @@ fn main() -> Result<()> {
             .with_context(|| "Failed to configure thread pool")?;
     }
 
-    let config = FlattenConfig::new(&args);
+    let config = FlattenConfig::new(&args).await?;
 
     println!("{} Starting flatten process...", ROCKET);
     println!("Processing {} folders", args.folders.len());
@@ -634,7 +561,7 @@ fn main() -> Result<()> {
     };
 
     let total_files = AtomicUsize::new(0);
-    let total_bytes_processed = 0u64;
+    let total_bytes_processed = AtomicUsize::new(0);
 
     for base_folder in &args.folders {
         if !base_folder.exists() {
@@ -694,14 +621,15 @@ fn main() -> Result<()> {
 
         let results = process_files_parallel(files, &config, Some(pb.clone()));
 
-        // Write results
+        // Write results and count bytes
         for (file_path, content_result) in results {
             if let Some(ref mut output) = output_file {
                 output.write_all(format!("### {} BEGIN ###\n", file_path.display()).as_bytes())?;
 
                 match content_result {
-                    Ok(content) => {
+                    Ok((content, bytes_processed)) => {
                         output.write_all(content.as_bytes())?;
+                        total_bytes_processed.fetch_add(bytes_processed as usize, Ordering::Relaxed);
                     }
                     Err(e) => {
                         output.write_all(format!("[Error reading file: {}]\n", e).as_bytes())?;
@@ -713,8 +641,9 @@ fn main() -> Result<()> {
             } else {
                 // Dry run - just show file paths
                 match content_result {
-                    Ok(_) => {
-                        println!("  ✅ {}", file_path.display());
+                    Ok((_, bytes_processed)) => {
+                        println!("  ✅ {} ({} bytes)", file_path.display(), bytes_processed);
+                        total_bytes_processed.fetch_add(bytes_processed as usize, Ordering::Relaxed);
                     }
                     Err(e) => {
                         println!("  ❌ {} ({})", file_path.display(), e);
@@ -742,23 +671,41 @@ fn main() -> Result<()> {
     }
 
     let total = total_files.load(Ordering::Relaxed);
+    let total_bytes = total_bytes_processed.load(Ordering::Relaxed) as u64;
     println!();
     println!("{} Flatten completed successfully!", style("✓").green());
     println!("Total files processed: {}", total);
 
     if config.show_stats {
-        println!(
-            "Total bytes processed: {} MB",
-            total_bytes_processed / 1_048_576
-        );
-        println!(
-            "Average file size: {} KB",
-            if total > 0 {
-                total_bytes_processed / total as u64 / 1024
+        // Format total bytes appropriately
+        if total_bytes >= 1_048_576 {
+            println!(
+                "Total bytes processed: {:.2} MB",
+                total_bytes as f64 / 1_048_576.0
+            );
+        } else if total_bytes >= 1024 {
+            println!(
+                "Total bytes processed: {:.2} KB",
+                total_bytes as f64 / 1024.0
+            );
+        } else {
+            println!("Total bytes processed: {} bytes", total_bytes);
+        }
+
+        // Format average file size appropriately
+        if total > 0 {
+            let avg_size = total_bytes / total as u64;
+            if avg_size >= 1024 {
+                println!(
+                    "Average file size: {:.2} KB",
+                    avg_size as f64 / 1024.0
+                );
             } else {
-                0
+                println!("Average file size: {} bytes", avg_size);
             }
-        );
+        } else {
+            println!("Average file size: 0 bytes");
+        }
     }
 
     if !config.dry_run {

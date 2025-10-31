@@ -162,30 +162,7 @@ fn test_multiple_folders() {
     assert!(content.contains("FLATTENED CONTENT"));
 }
 
-#[test]
-fn test_system_instructions() {
-    let output = Command::new("cargo")
-        .args([
-            "run",
-            "--bin",
-            "flatten-rust",
-            "--",
-            "--system_instructions",
-        ])
-        .current_dir(env!("CARGO_MANIFEST_DIR"))
-        .output()
-        .expect("Failed to execute flatten-rust");
 
-    assert!(
-        output.status.success(),
-        "Failed to run flatten-rust: {:?}",
-        String::from_utf8_lossy(&output.stderr)
-    );
-
-    let content = String::from_utf8_lossy(&output.stdout);
-    assert!(content.contains("System Instructions"));
-    assert!(content.contains("Language Model Assistance"));
-}
 
 #[test]
 fn test_error_handling() {

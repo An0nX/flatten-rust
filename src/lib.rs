@@ -1,13 +1,30 @@
+//! High-performance codebase flattening library
+//!
+//! This library provides functionality for flattening codebases into
+//! markdown format with intelligent exclusion patterns based on gitignore templates.
+
+pub mod config;
+pub mod exclusions;
+
 use std::collections::HashSet;
 use std::fs;
 use std::path::Path;
 
+/// Configuration for codebase flattening
+///
+/// Controls which files and folders are processed and how they're displayed
 pub struct FlattenConfig {
+    /// Folders to skip during processing
     pub skip_folders: HashSet<String>,
+    /// File extensions to skip
     pub skip_extensions: HashSet<String>,
+    /// Whether to show skipped items in the output
     pub show_skipped: bool,
+    /// Maximum file size to process in bytes
     pub max_file_size: u64,
+    /// Whether to include hidden files and folders
     pub include_hidden: bool,
+    /// Maximum directory traversal depth
     pub max_depth: usize,
 }
 
@@ -25,28 +42,34 @@ impl Default for FlattenConfig {
 }
 
 impl FlattenConfig {
+    /// Creates a new FlattenConfig with default settings
+    ///
+    /// # Examples
+    /// ```
+    /// use flatten_rust::FlattenConfig;
+    /// 
+    /// let config = FlattenConfig::new();
+    /// ```
     pub fn new() -> Self {
         Self::default()
     }
 
     pub fn should_skip_path(&self, path: &Path) -> bool {
-        if let Some(name) = path.file_name() {
-            if let Some(name_str) = name.to_str() {
-                // Skip hidden files unless explicitly included
-                if !self.include_hidden && name_str.starts_with('.') {
-                    return true;
-                }
-                return self.skip_folders.contains(name_str);
+        if let Some(name) = path.file_name()
+            && let Some(name_str) = name.to_str() {
+            // Skip hidden files unless explicitly included
+            if !self.include_hidden && name_str.starts_with('.') {
+                return true;
             }
+            return self.skip_folders.contains(name_str);
         }
         false
     }
 
     pub fn should_skip_file(&self, path: &Path) -> bool {
-        if let Some(extension) = path.extension() {
-            if let Some(ext_str) = extension.to_str() {
-                return self.skip_extensions.contains(ext_str);
-            }
+        if let Some(extension) = path.extension()
+            && let Some(ext_str) = extension.to_str() {
+            return self.skip_extensions.contains(ext_str);
         }
         false
     }

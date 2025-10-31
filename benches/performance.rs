@@ -84,11 +84,10 @@ fn bench_memory_mapping(c: &mut Criterion) {
     c.bench_function("memory_mapping", |b| {
         b.iter(|| {
             for file_path in &files {
-                if let Ok(file) = std::fs::File::open(file_path) {
-                    if let Ok(map) = unsafe { memmap2::MmapOptions::new().map(&file) } {
-                        let content = std::str::from_utf8(&map);
-                        let _ = hint::black_box(content);
-                    }
+                if let Ok(file) = std::fs::File::open(file_path)
+                    && let Ok(map) = unsafe { memmap2::MmapOptions::new().map(&file) } {
+                    let content = std::str::from_utf8(&map);
+                    let _ = hint::black_box(content);
                 }
             }
         })
