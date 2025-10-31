@@ -1,3 +1,4 @@
+KODA.md
 # Ignore build artifacts
 /target/
 /target/debug/
