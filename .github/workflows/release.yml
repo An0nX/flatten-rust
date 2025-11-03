@@ -58,7 +58,7 @@ jobs:
       run: strip target/${{ matrix.target }}/release/flatten-rust${{ matrix.os == 'windows-latest' && '.exe' || '' }}
 
     - name: Upload Release Asset
-      uses: softprops/action-gh-release@v1
+      uses: softprops/action-gh-release@v2
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
