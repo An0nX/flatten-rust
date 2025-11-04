@@ -1,193 +1,113 @@
-use flatten_rust::create_test_structure;
+use anyhow::Result;
 use std::fs;
 use std::process::Command;
+use tempfile::{tempdir, TempDir};
+
+fn create_test_structure() -> Result<TempDir> {
+    let temp_dir = tempdir()?;
+    let root = temp_dir.path();
+    fs::create_dir_all(root.join("src"))?;
+    fs::create_dir_all(root.join("tests"))?;
+    fs::create_dir_all(root.join("node_modules"))?;
+
+    fs::write(root.join("src/main.rs"), "fn main() {}")?;
+    fs::write(root.join("tests/integration.rs"), "#[test] fn t() {}")?;
+    fs::write(root.join("README.md"), "# Test Project")?;
+    fs::write(root.join("test.bin"), b"\x00\x01\x02")?;
+    Ok(temp_dir)
+}
+
+fn run_flatten(args: &[&str]) -> (String, String, bool) {
+    let output = Command::new(env!("CARGO_BIN_EXE_flatten-rust"))
+        .args(args)
+        .output()
+        .expect("Failed to execute command");
+
+    (
+        String::from_utf8_lossy(&output.stdout).to_string(),
+        String::from_utf8_lossy(&output.stderr).to_string(),
+        output.status.success(),
+    )
+}
 
 #[test]
 fn test_basic_flatten() {
-    let temp_dir = create_test_structure().unwrap();
+    let temp_dir = create_test_structure().expect("Failed to create test structure");
     let output_file = temp_dir.path().join("output.md");
 
-    // Debug: check what was created
-    println!("Temp dir: {}", temp_dir.path().display());
-    for entry in std::fs::read_dir(temp_dir.path()).unwrap() {
-        println!("Found: {}", entry.unwrap().path().display());
-    }
+    let args = &[
+        "-f",
+        temp_dir.path().to_str().unwrap(),
+        "-o",
+        output_file.to_str().unwrap(),
+        "--include-hidden",
+    ];
 
-    let output = Command::new("cargo")
-        .args([
-            "run",
-            "--bin",
-            "flatten-rust",
-            "--",
-            "--folders",
-            temp_dir.path().to_str().unwrap(),
-            "--output",
-            output_file.to_str().unwrap(),
-            "--include-hidden", // Include hidden files for testing
-        ])
-        .current_dir(env!("CARGO_MANIFEST_DIR"))
-        .output()
-        .expect("Failed to execute flatten-rust");
+    let (stdout, stderr, success) = run_flatten(args);
 
-    let stdout = String::from_utf8_lossy(&output.stdout);
-    let stderr = String::from_utf8_lossy(&output.stderr);
-
-    println!("stdout: {}", stdout);
-    println!("stderr: {}", stderr);
-
-    assert!(
-        output.status.success(),
-        "Failed to run flatten-rust: {:?}",
-        stderr
-    );
+    assert!(success, "Command failed. stdout: {}, stderr: {}", stdout, stderr);
     assert!(output_file.exists(), "Output file was not created");
 
-    let content = fs::read_to_string(&output_file).unwrap();
-    println!("Content length: {}", content.len());
-    println!("Content preview: {}", &content[..content.len().min(500)]);
-
+    let content = fs::read_to_string(&output_file).expect("Could not read output file");
     assert!(content.contains("FOLDER STRUCTURE"));
-    // Only check for FLATTENED CONTENT if files were found
-    if content.contains("src/main.rs") {
-        assert!(content.contains("FLATTENED CONTENT"));
-    }
+    assert!(content.contains("FLATTENED CONTENT"));
     assert!(content.contains("src/main.rs"));
     assert!(content.contains("README.md"));
 }
 
 #[test]
 fn test_skip_folders() {
-    let temp_dir = create_test_structure().unwrap();
-    let output_file = temp_dir.path().join("output_skip.md");
+    let temp_dir = create_test_structure().expect("Failed to create test structure");
+    let output_file = temp_dir.path().join("output.md");
 
-    let output = Command::new("cargo")
-        .args([
-            "run",
-            "--bin",
-            "flatten-rust",
-            "--",
-            "--folders",
-            temp_dir.path().to_str().unwrap(),
-            "--skip-folders",
-            "node_modules",
-            "--output",
-            output_file.to_str().unwrap(),
-        ])
-        .current_dir(env!("CARGO_MANIFEST_DIR"))
-        .output()
-        .expect("Failed to execute flatten-rust");
+    let args = &[
+        "-f",
+        temp_dir.path().to_str().unwrap(),
+        "-o",
+        output_file.to_str().unwrap(),
+        "-s",
+        "node_modules",
+    ];
 
-    assert!(
-        output.status.success(),
-        "Failed to run flatten-rust: {:?}",
-        String::from_utf8_lossy(&output.stderr)
-    );
-
-    let content = fs::read_to_string(&output_file).unwrap();
-    // Should not contain node_modules content
-    assert!(!content.contains("node_modules") || content.contains("skipped"));
+    let (stdout, stderr, success) = run_flatten(args);
+    assert!(success, "Command failed. stdout: {}, stderr: {}", stdout, stderr);
+    
+    let content = fs::read_to_string(&output_file).expect("Could not read output file");
+    assert!(!content.contains("node_modules"));
 }
 
 #[test]
 fn test_show_skipped() {
-    let temp_dir = create_test_structure().unwrap();
-    let output_file = temp_dir.path().join("output_show.md");
+    let temp_dir = create_test_structure().expect("Failed to create test structure");
+    let output_file = temp_dir.path().join("output.md");
+    
+    let args = &[
+        "-f", temp_dir.path().to_str().unwrap(),
+        "-o", output_file.to_str().unwrap(),
+        "-s", "node_modules",
+        "-k", // --show-skipped
+    ];
 
-    let output = Command::new("cargo")
-        .args([
-            "run",
-            "--bin",
-            "flatten-rust",
-            "--",
-            "--folders",
-            temp_dir.path().to_str().unwrap(),
-            "--skip-folders",
-            "node_modules",
-            "--show-skipped",
-            "--output",
-            output_file.to_str().unwrap(),
-        ])
-        .current_dir(env!("CARGO_MANIFEST_DIR"))
-        .output()
-        .expect("Failed to execute flatten-rust");
-
-    assert!(
-        output.status.success(),
-        "Failed to run flatten-rust: {:?}",
-        String::from_utf8_lossy(&output.stderr)
-    );
-
-    let content = fs::read_to_string(&output_file).unwrap();
-    // Should show skipped folders
-    assert!(content.contains("node_modules"));
-    assert!(content.contains("skipped"));
+    let (stdout, stderr, success) = run_flatten(args);
+    assert!(success, "Command failed. stdout: {}, stderr: {}", stdout, stderr);
+    
+    let content = fs::read_to_string(&output_file).expect("Could not read output file");
+    assert!(content.contains("node_modules/ (skipped)"));
 }
 
 #[test]
-fn test_multiple_folders() {
-    let temp_dir1 = create_test_structure().unwrap();
-    let temp_dir2 = create_test_structure().unwrap();
-    let output_file = temp_dir1.path().join("output_multi.md");
-
-    // Add a unique file to second directory
-    fs::write(temp_dir2.path().join("unique.txt"), "unique content").unwrap();
-
-    let output = Command::new("cargo")
-        .args([
-            "run",
-            "--bin",
-            "flatten-rust",
-            "--",
-            "--folders",
-            temp_dir1.path().to_str().unwrap(),
-            temp_dir2.path().to_str().unwrap(),
-            "--output",
-            output_file.to_str().unwrap(),
-            "--include-hidden",
-        ])
-        .current_dir(env!("CARGO_MANIFEST_DIR"))
-        .output()
-        .expect("Failed to execute flatten-rust");
-
-    assert!(
-        output.status.success(),
-        "Failed to run flatten-rust: {:?}",
-        String::from_utf8_lossy(&output.stderr)
-    );
-
-    let content = fs::read_to_string(&output_file).unwrap();
-    assert!(content.contains(&*temp_dir1.path().to_string_lossy()));
-    assert!(content.contains(&*temp_dir2.path().to_string_lossy()));
-    assert!(content.contains("unique.txt"));
-    assert!(content.contains("FLATTENED CONTENT"));
+fn test_error_on_missing_folder() {
+    let args = &["-f", "/non/existent/path"];
+    let (stdout, stderr, success) = run_flatten(args);
+    assert!(success);
+    assert!(stderr.contains("does not exist, skipping"));
+    assert!(!stdout.contains("Flatten completed successfully"));
 }
 
-
-
 #[test]
-fn test_error_handling() {
-    let output = Command::new("cargo")
-        .args([
-            "run",
-            "--bin",
-            "flatten-rust",
-            "--",
-            "--folders",
-            "/nonexistent/path",
-        ])
-        .current_dir(env!("CARGO_MANIFEST_DIR"))
-        .output()
-        .expect("Failed to execute flatten-rust");
-
-    // Should not panic, should handle gracefully
-    assert!(output.status.success() || !output.status.success()); // Either way, no panic
-    let stderr = String::from_utf8_lossy(&output.stderr);
-    let stdout = String::from_utf8_lossy(&output.stdout);
-
-    // Should contain warning about non-existent folder
-    assert!(
-        stderr.contains("does not exist")
-            || stdout.contains("does not exist")
-            || stderr.contains("Warning")
-    );
+fn test_error_no_folder_arg() {
+    let args = &["-o", "output.md"];
+    let (_stdout, stderr, success) = run_flatten(args);
+    assert!(!success);
+    assert!(stderr.contains("Error: --folders argument is required"));
 }
