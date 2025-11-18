@@ -5,6 +5,9 @@ edition = "2024"
 description = "High-performance codebase flattening tool in Rust"
 authors = ["An0nX"]
 license = "MIT"
+repository = "https://github.com/An0nX/flatten-rust"
+homepage = "https://github.com/An0nX/flatten-rust"
+documentation = "https://docs.rs/flatten-rust"
 
 [dependencies]
 clap = { version = "4.5.4", features = ["derive"] }
