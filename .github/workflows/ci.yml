@@ -95,7 +95,7 @@ jobs:
       run: cargo bench
 
     - name: Upload binary artifact
-      uses: actions/upload-artifact@v5
+      uses: actions/upload-artifact@v6
       with:
         name: flatten-rust-${{ matrix.target }}
         path: target/${{ matrix.target }}/release/flatten-rust${{ matrix.os == 'windows-latest' && '.exe' || '' }}
