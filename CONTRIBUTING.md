@@ -6,7 +6,7 @@ Thank you for your interest in contributing to Flatten Rust! This document provi
 
 ### Reporting Bugs
 
-- Use the [GitHub issue tracker](https://github.com/YOUR_USERNAME/flatten-rust/issues)
+- Use the [GitHub issue tracker](https://github.com/An0nX/flatten-rust/issues)
 - Provide detailed information about the bug
 - Include steps to reproduce
 - Specify your OS, Rust version, and project size
